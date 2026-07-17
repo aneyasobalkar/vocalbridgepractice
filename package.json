@@ -1,0 +1,22 @@
+{
+  "name": "vbtry2",
+  "version": "0.1.0",
+  "private": true,
+  "main": "server/app.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5",
+    "@vocalbridgeai/sdk": "^0.1.1",
+    "@vocalbridgeai/react": "^0.1.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "vite": "^8.1.4",
+    "@vitejs/plugin-react": "^6.0.3"
+  }
+}
