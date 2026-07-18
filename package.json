@@ -7,7 +7,8 @@
     "start": "node server/app.js",
     "dev": "vite",
     "setup:mcp": "node scripts/generate-mcp-config.js",
-    "test:paypal": "node scripts/test-paypal.js"
+    "test:paypal": "node scripts/test-paypal.js",
+    "test:memory": "node scripts/test-memory.js"
   },
   "dependencies": {
     "@vocalbridgeai/react": "^0.1.1",
