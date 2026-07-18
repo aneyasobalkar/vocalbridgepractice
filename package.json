@@ -9,15 +9,16 @@
     "setup:mcp": "node scripts/generate-mcp-config.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "dotenv": "^16.4.5",
-    "@vocalbridgeai/sdk": "^0.1.1",
     "@vocalbridgeai/react": "^0.1.1",
+    "@vocalbridgeai/sdk": "^0.1.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "multer": "^2.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "vite": "^8.1.4",
-    "@vitejs/plugin-react": "^6.0.3"
+    "@vitejs/plugin-react": "^6.0.3",
+    "vite": "^8.1.4"
   }
 }

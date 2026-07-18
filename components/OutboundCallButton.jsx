@@ -2,6 +2,7 @@
 // Talks only to your own backend (/api/voice-call) — never touches the
 // Vocal Bridge API key directly.
 import { useState } from 'react';
+import { PhoneIcon } from './icons';
 
 export default function OutboundCallButton() {
   const [phone, setPhone] = useState('');
@@ -28,17 +29,20 @@ export default function OutboundCallButton() {
 
   return (
     <div className="outbound-call">
-      <input
-        type="tel"
-        placeholder="+14155551234"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-      />
-      <button onClick={placeCall} disabled={status === 'calling'}>
-        Call me
-      </button>
-      {status && <p>Status: {status}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <div className="outbound-row">
+        <input
+          className="input"
+          type="tel"
+          placeholder="+14155551234"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
+        <button className="btn btn-primary" onClick={placeCall} disabled={status === 'calling' || !phone}>
+          <PhoneIcon /> Call me
+        </button>
+      </div>
+      {status && <p className="status-text">Status: {status}</p>}
+      {error && <div className="error-banner">{error}</div>}
     </div>
   );
 }

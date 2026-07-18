@@ -5,11 +5,13 @@ const express = require('express');
 
 const voiceToken = require('./voiceToken');
 const voiceCall = require('./voiceCall');
+const upload = require('./upload');
 
 const app = express();
 
 app.use('/api', voiceToken);
 app.use('/api', voiceCall);
+app.use('/api', upload);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Voice backend listening on :${PORT}`));
