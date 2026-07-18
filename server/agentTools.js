@@ -44,6 +44,53 @@ router.get('/itinerary', (req, res) => {
   res.json(travelers.getItinerary());
 });
 
+// Weather lookup for a destination, e.g. "what's it like when I land" during
+// a call. Backed by Open-Meteo (free, keyless): geocode the city name, then
+// pull the daily forecast for that date (or current conditions if no date
+// is given). No credentials needed, so nothing to configure in .env.
+router.get('/weather', async (req, res) => {
+  const { city, date } = req.query;
+  if (!city) {
+    return res.status(400).json({ error: 'city is required' });
+  }
+
+  try {
+    const geoResponse = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`
+    );
+    const geoData = await geoResponse.json();
+    const place = geoData.results?.[0];
+    if (!place) {
+      return res.status(404).json({ error: `No location found matching "${city}".` });
+    }
+
+    const forecastParams = new URLSearchParams({
+      latitude: place.latitude,
+      longitude: place.longitude,
+      timezone: 'auto',
+    });
+
+    if (date) {
+      forecastParams.set('daily', 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max');
+      forecastParams.set('start_date', date);
+      forecastParams.set('end_date', date);
+    } else {
+      forecastParams.set('current', 'temperature_2m,precipitation,weather_code,wind_speed_10m');
+    }
+
+    const forecastResponse = await fetch(`https://api.open-meteo.com/v1/forecast?${forecastParams}`);
+    const forecastData = await forecastResponse.json();
+
+    res.json({
+      location: { name: place.name, country: place.country, latitude: place.latitude, longitude: place.longitude },
+      date: date || null,
+      weather: date ? forecastData.daily : forecastData.current,
+    });
+  } catch (error) {
+    res.status(502).json({ error: `Weather lookup failed: ${error.message}` });
+  }
+});
+
 router.post('/call-outcome', express.json(), (req, res) => {
   const { phone, name, summary, itineraryChanges } = req.body || {};
   if (!phone && !name) {
