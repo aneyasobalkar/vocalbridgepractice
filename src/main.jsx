@@ -14,20 +14,27 @@ function App() {
           <span className="brand-mark">
             <PlaneIcon />
           </span>
-          <span>Flight Searcher</span>
+          <span className="brand-name">Flight Searcher</span>
         </div>
-        <span className="brand-tagline">Your voice-powered travel concierge for flights, hotels, and itineraries</span>
+        <div className="hero-copy">
+          <span className="eyebrow">AI travel concierge</span>
+          <h1>Where will your voice take you?</h1>
+          <p className="brand-tagline">Search flights, shape itineraries, and plan the details in one natural conversation.</p>
+        </div>
       </header>
 
       <main className="app-main">
         <div className="app-main-primary">
-          <section className="card">
-            <h2>Talk to your agent</h2>
-            <span className="card-subtitle">Start a voice conversation to search and book flights or hotels</span>
+          <section className="card voice-card">
+            <div className="card-heading">
+              <span className="card-kicker">Live assistant</span>
+              <h2>Talk to your agent</h2>
+              <span className="card-subtitle">Start a voice conversation to search and book flights or hotels</span>
+            </div>
             <VoiceChatWidget tokenUrl="/api/voice-token" />
           </section>
 
-          <section className="card">
+          <section className="card call-card">
             <h2>Prefer a phone call?</h2>
             <span className="card-subtitle">We&rsquo;ll call you and walk through your trip together</span>
             <OutboundCallButton />
