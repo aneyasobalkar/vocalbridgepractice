@@ -24,39 +24,48 @@ if (!VOCAL_BRIDGE_API_KEY) {
   throw new Error('VOCALBRIDGE_API_KEY is not set (check your .env file)');
 }
 
+// Shared by the single-call route below and the group broadcast in tripUpdates.js.
+async function placeCall({ phoneNumber, participantName }) {
+  if (typeof phoneNumber !== 'string' || !E164.test(phoneNumber)) {
+    throw new Error('phone_number must be E.164 format, e.g. +14155551234');
+  }
+
+  const response = await fetch(`${VOCAL_BRIDGE_URL}/api/v1/calls`, {
+    method: 'POST',
+    headers: {
+      'X-API-Key': VOCAL_BRIDGE_API_KEY,
+      ...(VOCAL_BRIDGE_AGENT_ID ? { 'X-Agent-Id': VOCAL_BRIDGE_AGENT_ID } : {}),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      phone_number: phoneNumber,
+      ...(participantName ? { participant_name: String(participantName).slice(0, 100) } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    console.error('Vocal Bridge call request failed:', response.status, detail);
+    const error = new Error('Failed to place call');
+    error.status = response.status === 403 ? 403 : 502;
+    throw error;
+  }
+
+  return response.json();
+}
+
 router.post('/voice-call', express.json(), async (req, res) => {
   const { phone_number, participant_name } = req.body || {};
 
-  if (typeof phone_number !== 'string' || !E164.test(phone_number)) {
-    return res.status(400).json({ error: 'phone_number must be E.164 format, e.g. +14155551234' });
-  }
-
   try {
-    const response = await fetch(`${VOCAL_BRIDGE_URL}/api/v1/calls`, {
-      method: 'POST',
-      headers: {
-        'X-API-Key': VOCAL_BRIDGE_API_KEY,
-        ...(VOCAL_BRIDGE_AGENT_ID ? { 'X-Agent-Id': VOCAL_BRIDGE_AGENT_ID } : {}),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        phone_number,
-        ...(participant_name ? { participant_name: String(participant_name).slice(0, 100) } : {}),
-      }),
-    });
-
-    if (!response.ok) {
-      const detail = await response.text();
-      console.error('Vocal Bridge call request failed:', response.status, detail);
-      return res.status(response.status === 403 ? 403 : 502).json({ error: 'Failed to place call' });
-    }
-
-    const data = await response.json();
+    const data = await placeCall({ phoneNumber: phone_number, participantName: participant_name });
     res.json(data);
   } catch (error) {
-    console.error('Failed to place call:', error);
-    res.status(500).json({ error: 'Failed to place call' });
+    if (error.message.startsWith('phone_number must be')) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(error.status || 500).json({ error: error.message || 'Failed to place call' });
   }
 });
 
-module.exports = router;
+module.exports = { router, placeCall };

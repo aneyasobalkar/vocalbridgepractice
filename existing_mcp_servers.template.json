@@ -164,5 +164,12 @@
     "headers": {
       "Authorization": "Bearer ${SABRE_BEARER_TOKEN}"
     }
+  },
+  {
+    "url": "https://mcp.sandbox.paypal.com/sse",
+    "name": "paypal-mcp-server",
+    "headers": {
+      "Authorization": "Bearer ${PAYPAL_MCP_BEARER_TOKEN}"
+    }
   }
 ]
