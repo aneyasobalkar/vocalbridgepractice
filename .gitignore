@@ -5,3 +5,4 @@ node_modules/
 existing_mcp_servers.json
 mcp_servers.json
 server/uploads/
+server/data/

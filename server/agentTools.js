@@ -32,12 +32,12 @@ router.get('/call-context', (req, res) => {
     return res.status(400).json({ error: 'Provide a phone or name to look up.' });
   }
 
-  const { traveler, pendingUpdate, itinerary } = travelers.getContextFor({ phone, name });
+  const { traveler, pendingUpdate, itinerary, lastOutcome } = travelers.getContextFor({ phone, name });
   if (!traveler) {
     return res.status(404).json({ error: 'No traveler found matching that phone or name.' });
   }
 
-  res.json({ traveler, pendingUpdate, itinerary });
+  res.json({ traveler, pendingUpdate, itinerary, lastOutcome });
 });
 
 router.get('/itinerary', (req, res) => {
