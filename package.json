@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server/app.js",
     "dev": "vite",
+    "build": "vite build",
     "setup:mcp": "node scripts/generate-mcp-config.js",
     "test:paypal": "node scripts/test-paypal.js",
     "test:memory": "node scripts/test-memory.js"
