@@ -7,6 +7,7 @@
 // route here requires the shared secret below.
 const express = require('express');
 const travelers = require('./travelers');
+const trips = require('./trips');
 
 const router = express.Router();
 
@@ -32,16 +33,86 @@ router.get('/call-context', (req, res) => {
     return res.status(400).json({ error: 'Provide a phone or name to look up.' });
   }
 
-  const { traveler, pendingUpdate, itinerary, lastOutcome } = travelers.getContextFor({ phone, name });
+  const { traveler, pendingUpdate, lastOutcome } = travelers.getContextFor({ phone, name });
   if (!traveler) {
     return res.status(404).json({ error: 'No traveler found matching that phone or name.' });
   }
 
-  res.json({ traveler, pendingUpdate, itinerary, lastOutcome });
+  const tripList = trips.findTripsForPhone(traveler.phone);
+  res.json({ traveler, pendingUpdate, trips: tripList, lastOutcome });
 });
 
-router.get('/itinerary', (req, res) => {
-  res.json(travelers.getItinerary());
+// Create a new solo or group trip. membersList is a newline-delimited
+// "Name|Phone" string (custom API tool parameters must be flat strings, not
+// arrays) listing every OTHER member of a group trip; empty/omitted for solo.
+router.post('/trips', express.json(), (req, res) => {
+  const { phone, name, type, destination, membersList } = req.body || {};
+  if (!phone || !name) {
+    return res.status(400).json({ error: 'phone and name are required.' });
+  }
+  if (type !== 'solo' && type !== 'group') {
+    return res.status(400).json({ error: "type must be 'solo' or 'group'." });
+  }
+
+  const members = String(membersList || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [memberName, memberPhone] = line.split('|').map((part) => (part || '').trim());
+      return { name: memberName, phone: memberPhone };
+    })
+    .filter((member) => member.phone);
+
+  const trip = trips.createTrip({
+    type,
+    destination: destination || '',
+    primaryPhone: phone,
+    primaryName: name,
+    members,
+  });
+  res.status(201).json(trip);
+});
+
+// Add a reservation (flight, hotel, dinner, or anything else) owned by the
+// calling traveler. Rejects if phone isn't a member of the trip.
+router.post('/reservations', express.json(), (req, res) => {
+  const { phone, tripId, type, details } = req.body || {};
+  if (!phone || !tripId) {
+    return res.status(400).json({ error: 'phone and tripId are required.' });
+  }
+
+  try {
+    const reservation = trips.addReservation({ tripId: Number(tripId), phone, type, details });
+    res.status(201).json(reservation);
+  } catch (error) {
+    if (error instanceof trips.NotAMemberError) {
+      return res.status(403).json({ error: 'You are not a member of that trip.' });
+    }
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Update a reservation. Only the traveler who owns it may change it — every
+// other trip member's attempt is rejected with 403, this is the actual
+// enforcement behind "Jane can't change Amy's stuff".
+router.post('/reservations/update', express.json(), (req, res) => {
+  const { phone, reservationId, type, details } = req.body || {};
+  if (!phone || !reservationId) {
+    return res.status(400).json({ error: 'phone and reservationId are required.' });
+  }
+
+  try {
+    const reservation = trips.updateReservation({
+      reservationId: Number(reservationId), phone, type, details,
+    });
+    res.json(reservation);
+  } catch (error) {
+    if (error instanceof trips.NotOwnerError) {
+      return res.status(403).json({ error: 'You can only change your own reservations.' });
+    }
+    res.status(400).json({ error: error.message });
+  }
 });
 
 // Weather lookup for a destination, e.g. "what's it like when I land" during

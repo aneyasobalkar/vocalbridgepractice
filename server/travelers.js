@@ -1,7 +1,6 @@
-// Persistent SQLite store for the group trip: travelers, shared itinerary,
-// pending updates, and call outcomes. The public functions intentionally match
-// the original in-memory module so the existing routes and agent tools do not
-// need to change.
+// Persistent SQLite store for travelers, their pending updates, and call
+// outcomes. Per-trip data (trips, membership, reservations) lives in
+// trips.js, which shares this module's `database` connection.
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
@@ -27,12 +26,6 @@ database.exec(`
   CREATE TABLE IF NOT EXISTS pending_updates (
     phone TEXT PRIMARY KEY REFERENCES travelers(phone) ON DELETE CASCADE,
     message TEXT NOT NULL,
-    created_at TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS itinerary_notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    note TEXT NOT NULL,
     created_at TEXT NOT NULL
   );
 
@@ -85,12 +78,6 @@ const statements = {
   `),
   deletePendingUpdate: database.prepare(
     'DELETE FROM pending_updates WHERE phone = ?',
-  ),
-  addItineraryNote: database.prepare(
-    'INSERT INTO itinerary_notes (note, created_at) VALUES (?, ?)',
-  ),
-  listItineraryNotes: database.prepare(
-    'SELECT note FROM itinerary_notes ORDER BY id',
   ),
   insertOutcome: database.prepare(`
     INSERT INTO call_outcomes (name, phone, summary, itinerary_changes, timestamp)
@@ -182,7 +169,7 @@ function getContextFor({ phone, name }) {
     ? mapOutcome(statements.lastOutcomeForPhone.get(traveler.phone))
     : null;
 
-  return { traveler, pendingUpdate, itinerary: getItinerary(), lastOutcome };
+  return { traveler, pendingUpdate, lastOutcome };
 }
 
 function recordOutcome({ phone, name, summary, itineraryChanges }) {
@@ -196,7 +183,6 @@ function recordOutcome({ phone, name, summary, itineraryChanges }) {
   database.exec('BEGIN');
   try {
     if (traveler) statements.deletePendingUpdate.run(traveler.phone);
-    for (const change of changes) statements.addItineraryNote.run(change, now);
 
     const outcome = {
       name: traveler?.name || name || '',
@@ -220,10 +206,6 @@ function recordOutcome({ phone, name, summary, itineraryChanges }) {
   }
 }
 
-function getItinerary() {
-  return { notes: statements.listItineraryNotes.all().map((row) => row.note) };
-}
-
 function listOutcomes() {
   return statements.listOutcomes.all().map(mapOutcome);
 }
@@ -239,8 +221,8 @@ module.exports = {
   setPendingUpdate,
   getContextFor,
   recordOutcome,
-  getItinerary,
   listOutcomes,
   close,
   databasePath,
+  database,
 };

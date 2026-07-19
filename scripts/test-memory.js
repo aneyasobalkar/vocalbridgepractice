@@ -16,8 +16,8 @@ if (process.argv[2] === 'verify') {
 
   if (context.traveler?.name !== 'Jane') fail('traveler did not persist');
   if (!context.lastOutcome?.summary.includes('New York')) fail('call summary did not persist');
-  if (!context.itinerary.notes.includes('Considering a Monday morning flight')) {
-    fail('itinerary did not persist');
+  if (!context.lastOutcome?.itineraryChanges.includes('Considering a Monday morning flight')) {
+    fail('itinerary changes did not persist on the call outcome');
   }
 
   travelers.close();
